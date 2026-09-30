@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ company }} </title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div id="root"
+     data-user='{{ user | tojson }}'
+     data-plant='{{ plant | tojson }}'
+     data-company="{{ company }}"
+     data-modules='{{ all_modules | tojson }}'
+     data-code-min="{{ code_min }}"
+     data-code-max="{{ code_max }}">
+
+  <header class="navbar">
+    <div class="nav-zone nav-left">
+      <div class="logo-badge">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="{{ company }}" class="logo-img">
+      </div>
+      <div class="plant-info">
+        <div class="plant-name">{{ plant.name }}</div>
+        <div class="plant-meta">{{ plant.code }} &middot; {{ plant.address }}</div>
+      </div>
+    </div>
+
+    <div class="nav-zone nav-center">
+      <span class="app-name">{{ company }} Part Code Generator</span>
+    </div>
+
+    <div class="nav-zone nav-right">
+      <button class="nav-link active" data-tab="home">Home</button>
+      <button class="nav-link" data-tab="history">History</button>
+      <button class="nav-link" data-tab="user_management" id="umNavLink">User Management</button>
+      <button class="nav-link" data-tab="categories" id="catNavLink">Manage Categories</button>
+
+      <div class="account-wrap">
+        <button class="account-btn" id="accountBtn">
+          <span class="account-dot"></span>
+          <span id="accountName">{{ user.username }}</span>
+        </button>
+        <div class="account-menu" id="accountMenu" hidden>
+          <div class="account-menu-name">{{ user.username }}</div>
+          <div class="account-menu-role">{{ user.role }}</div>
+          <a href="{{ url_for('logout') }}" class="account-logout">Log out</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- ============================= HOME ============================= -->
+    <section class="tab-panel" id="tab-home">
+      <div class="panel-create">
+        <h2>Create a part code</h2>
+        <p class="muted">Pick a material category — the form adapts to that category's rules automatically.</p>
+
+        <label for="categorySelect">Material category</label>
+        <select id="categorySelect"></select>
+
+        <div id="dynamicFields"></div>
+
+        <button id="createBtn" class="btn-primary">Create code</button>
+        <span class="length-rule" id="lengthRule"></span>
+        <div id="createError" class="flash error" hidden></div>
+
+        <div id="resultBox" class="result-box" hidden>
+          <div class="result-label">Code created</div>
+          <div class="result-code" id="resultCode"></div>
+          <div class="result-actions">
+            <button id="copyBtn" class="btn-secondary">Copy</button>
+            <button id="downloadBtn" class="btn-secondary">Download as .txt</button>
+            <button id="downloadXlsxBtn" class="btn-secondary">Download as Excel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-row">
+        <div class="panel-recent">
+          <h3>Recent codes</h3>
+          <table class="mini-table" id="recentTable">
+            <thead><tr><th>Code</th><th>Category</th><th>By</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="panel-chart">
+          <div class="chart-header">
+            <h3>Codes created</h3>
+            <div class="filter-pills" id="chartFilters">
+              <button class="pill active" data-range="day">Day</button>
+              <button class="pill" data-range="month">Month</button>
+              <button class="pill" data-range="year">Year</button>
+            </div>
+          </div>
+          <svg id="chartSvg" viewBox="0 0 480 220" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ HISTORY ============================ -->
+    <section class="tab-panel" id="tab-history" hidden>
+      <div class="history-toolbar">
+        <label class="checkbox-inline">
+          <input type="checkbox" id="selectAllBox"> Select all
+        </label>
+        <select id="historyFilter">
+          <option value="all">All categories</option>
+        </select>
+        <button id="downloadSelectedBtn" class="btn-primary">Download selected (.txt)</button>
+        <button id="downloadSelectedXlsxBtn" class="btn-secondary">Download selected (Excel)</button>
+        <span class="muted" id="historyCount"></span>
+      </div>
+      <table class="full-table" id="historyTable">
+        <thead>
+          <tr><th></th><th>Code</th><th>Category</th><th>Created By</th><th>Created At (UTC)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- ======================== USER MANAGEMENT ========================= -->
+    <section class="tab-panel" id="tab-user_management" hidden>
+      <div class="um-grid">
+        <div class="um-form">
+          <h2>Add user</h2>
+          <label for="newUsername">Username</label>
+          <input id="newUsername" type="text">
+          <label for="newPassword">Password</label>
+          <input id="newPassword" type="password">
+          <label for="newRole">Access level</label>
+          <select id="newRole"></select>
+          <div id="newAccessGroup">
+            <label>Modules visible to this user</label>
+            <label class="checkbox-inline"><input type="checkbox" class="new-access" value="home" checked> Home</label>
+            <label class="checkbox-inline"><input type="checkbox" class="new-access" value="history" checked> History</label>
+            <label class="checkbox-inline"><input type="checkbox" class="new-access" value="user_management"> User Management</label>
+          </div>
+          <button id="addUserBtn" class="btn-primary">Create user</button>
+          <div id="umError" class="flash error" hidden></div>
+        </div>
+
+        <div class="um-list">
+          <h2>Users</h2>
+          <table class="full-table" id="usersTable">
+            <thead><tr><th>Username</th><th>Role</th><th>Modules</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= MANAGE CATEGORIES ====================== -->
+    <section class="tab-panel" id="tab-categories" hidden>
+      <div class="um-grid">
+        <div class="um-form">
+          <h2>Add a material category</h2>
+          <p class="muted">New material types show up in the Home dropdown for everyone as soon as they're saved here.</p>
+
+          <label for="newCatLabel">Category name</label>
+          <input id="newCatLabel" type="text" placeholder="e.g. Thermal Pad">
+
+          <label for="newCatPrefix">Code prefix</label>
+          <input id="newCatPrefix" type="text" value="JEVBP">
+
+          <label>Fields (in the order they'll appear on the create form)</label>
+          <div id="newCatFields"></div>
+          <button type="button" class="btn-secondary" id="addFieldRowBtn">+ Add field</button>
+
+          <label class="checkbox-inline" style="margin-top:16px;">
+            <input type="checkbox" id="includeAutoSeq"> Include an auto-numbered sequence at the end
+          </label>
+
+          <button id="saveCategoryBtn" class="btn-primary">Save category</button>
+          <div id="catError" class="flash error" hidden></div>
+          <div id="catSuccess" class="flash success" hidden></div>
+        </div>
+
+        <div class="um-list">
+          <h2>Existing categories</h2>
+          <table class="full-table" id="categoriesTable">
+            <thead><tr><th>Name</th><th>Format</th><th>Code length</th><th>Type</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel-create" style="margin-top:20px;">
+        <h2>Import historical codes</h2>
+        <p class="muted">
+          Duplicate checking only catches collisions against codes this system already knows about.
+          Upload your existing part-code list once so new codes get checked against real history too —
+          not just codes created inside this app. Accepts <code>.csv</code> or <code>.xlsx</code>.
+          Columns: <code>code</code> (required), <code>category</code>, <code>created_by</code>, <code>created_at</code> — only <code>code</code> is required.
+        </p>
+        <input type="file" id="importFile" accept=".csv,.xlsx">
+        <button id="importBtn" class="btn-primary">Import</button>
+        <div id="importError" class="flash error" hidden></div>
+        <div id="importResult" class="flash success" hidden></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<template id="fieldRowTemplate">
+  <div class="field-row">
+    <input type="text" class="fr-label" placeholder="Field label (e.g. Thickness)">
+    <select class="fr-kind">
+      <option value="choice">Dropdown</option>
+      <option value="text">Free text</option>
+    </select>
+    <input type="text" class="fr-choices" placeholder="Options, comma-separated (code:label)">
+    <button type="button" class="icon-btn danger fr-remove">Remove</button>
+  </div>
+</template>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
