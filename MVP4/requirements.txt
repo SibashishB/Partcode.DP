@@ -1,4 +1,4 @@
 Flask>=3.0
 Werkzeug>=3.0
-# Optional: only needed to IMPORT .xlsx files. Excel export and CSV import work without it.
 openpyxl>=3.1
+gunicorn>=21.2
