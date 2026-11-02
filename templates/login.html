@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — {{ company }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-body">
+  <div class="login-card">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="{{ company }}" class="login-logo-img">
+    <h1 class="login-title">{{ company }} Part Code Generator</h1>
+    <p class="login-sub">Sign in to create and manage part codes.</p>
+
+    {% if error %}
+      <div class="flash error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('login') }}">
+      <label for="username">Username</label>
+      <input id="username" type="text" name="username" autocomplete="username" required autofocus>
+
+      <label for="password">Password</label>
+      <input id="password" type="password" name="password" autocomplete="current-password" required>
+
+      <button type="submit">Sign in</button>
+    </form>
+
+    <button type="button" class="link-btn" id="forgotBtn">Forgot password?</button>
+    <p class="login-hint" id="forgotMsg" hidden>Ask your Admin to reset your password from User Management.</p>
+  </div>
+
+  <script>
+    document.getElementById('forgotBtn').addEventListener('click', function () {
+      document.getElementById('forgotMsg').hidden = false;
+    });
+  </script>
+</body>
+</html>
